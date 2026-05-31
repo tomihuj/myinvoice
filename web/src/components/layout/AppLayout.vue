@@ -305,10 +305,17 @@ onMounted(async () => {
               class="cursor-pointer h-8 px-2 inline-flex items-center border-l border-neutral-200"
               :class="locale === 'sk' ? 'bg-primary-50' : 'hover:bg-neutral-50 grayscale opacity-60 hover:grayscale-0 hover:opacity-100'"
             >
-              <svg width="22" height="15" viewBox="0 0 6 4" xmlns="http://www.w3.org/2000/svg">
-                <rect width="6" height="4" fill="#ee1c25"/>
-                <rect width="6" height="2.667" fill="#0b4ea2"/>
-                <rect width="6" height="1.333" fill="#ffffff"/>
+              <svg width="22" height="15" viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg">
+                <rect width="9" height="6" fill="#ee1c25"/>
+                <rect width="9" height="4" fill="#0b4ea2"/>
+                <rect width="9" height="2" fill="#ffffff"/>
+                <g transform="translate(1.2,0.9)">
+                  <path d="M0,0.5 Q0,0 0.5,0 H2 Q2.5,0 2.5,0.5 V2.7 Q2.5,3.7 1.25,4.3 Q0,3.7 0,2.7 Z" fill="#ee1c25" stroke="#fff" stroke-width="0.2"/>
+                  <path d="M0.35,3 C0.55,2.55 0.75,2.55 0.95,3 C1.15,2.55 1.35,2.55 1.55,3 C1.75,2.55 1.95,2.55 2.15,3 L2.15,3.35 Q1.25,4.05 0.35,3.35 Z" fill="#0b4ea2"/>
+                  <rect x="1.13" y="0.55" width="0.24" height="2.5" fill="#fff"/>
+                  <rect x="0.73" y="1.15" width="1.04" height="0.22" fill="#fff"/>
+                  <rect x="0.6" y="1.85" width="1.3" height="0.22" fill="#fff"/>
+                </g>
               </svg>
             </button>
           </div>
@@ -513,10 +520,17 @@ onMounted(async () => {
                 class="cursor-pointer h-9 px-3 inline-flex items-center border-l border-neutral-200"
                 :class="locale === 'sk' ? 'bg-primary-50' : 'hover:bg-neutral-50 grayscale opacity-60'"
               >
-                <svg width="22" height="15" viewBox="0 0 6 4" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="6" height="4" fill="#ee1c25"/>
-                  <rect width="6" height="2.667" fill="#0b4ea2"/>
-                  <rect width="6" height="1.333" fill="#ffffff"/>
+                <svg width="22" height="15" viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="9" height="6" fill="#ee1c25"/>
+                  <rect width="9" height="4" fill="#0b4ea2"/>
+                  <rect width="9" height="2" fill="#ffffff"/>
+                  <g transform="translate(1.2,0.9)">
+                    <path d="M0,0.5 Q0,0 0.5,0 H2 Q2.5,0 2.5,0.5 V2.7 Q2.5,3.7 1.25,4.3 Q0,3.7 0,2.7 Z" fill="#ee1c25" stroke="#fff" stroke-width="0.2"/>
+                    <path d="M0.35,3 C0.55,2.55 0.75,2.55 0.95,3 C1.15,2.55 1.35,2.55 1.55,3 C1.75,2.55 1.95,2.55 2.15,3 L2.15,3.35 Q1.25,4.05 0.35,3.35 Z" fill="#0b4ea2"/>
+                    <rect x="1.13" y="0.55" width="0.24" height="2.5" fill="#fff"/>
+                    <rect x="0.73" y="1.15" width="1.04" height="0.22" fill="#fff"/>
+                    <rect x="0.6" y="1.85" width="1.3" height="0.22" fill="#fff"/>
+                  </g>
                 </svg>
               </button>
             </div>
