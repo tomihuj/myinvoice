@@ -10,7 +10,7 @@ final class SkVatRatesSeedTest extends TestCase
 {
     public function testMigrationSeedsAllSlovakRates(): void
     {
-        $sql = file_get_contents(__DIR__ . '/../../../../db/migrations/0083_vat_rates_slovak.sql');
+        $sql = file_get_contents(__DIR__ . '/../../../../db/migrations/0087_vat_rates_slovak.sql');
         self::assertIsString($sql);
 
         foreach (['SK-23', 'SK-19', 'SK-5', 'SK-0', 'SK-RC'] as $code) {
