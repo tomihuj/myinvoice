@@ -156,8 +156,9 @@ final class SetupAction
 
     private function insertSupplier(\PDO $pdo, array $supplier): int
     {
-        // Najdi country_id z iso2
-        $iso2 = strtoupper((string) ($supplier['country_iso2'] ?? 'CZ'));
+        // Najdi country_id z iso2 — default dle profilu instance (CZ, na SK instanci SK).
+        $homeCountry = strtoupper((string) $this->config->get('country.profile', 'CZ'));
+        $iso2 = strtoupper((string) ($supplier['country_iso2'] ?? $homeCountry));
         $stmtCountry = $pdo->prepare('SELECT id FROM countries WHERE iso2 = ?');
         $stmtCountry->execute([$iso2]);
         $countryId = (int) ($stmtCountry->fetchColumn() ?: 0);
@@ -171,7 +172,12 @@ final class SetupAction
         $defaultCurrencyCode = strtoupper((string) (
             $supplier['default_currency'] ?? $this->config->get('country.local_currency', 'CZK')
         ));
-        $vatRateId = (int) $pdo->query("SELECT id FROM vat_rates WHERE is_default = 1 ORDER BY id LIMIT 1")->fetchColumn()
+        // Default VAT rate scoped to the home country (SK-23 on SK) — both CZ and SK
+        // rows carry is_default=1, so an unscoped pick would grab CZ by id order.
+        $stmtVat = $pdo->prepare("SELECT id FROM vat_rates WHERE is_default = 1 AND country = ? ORDER BY id LIMIT 1");
+        $stmtVat->execute([$homeCountry]);
+        $vatRateId = (int) $stmtVat->fetchColumn()
+            ?: (int) $pdo->query("SELECT id FROM vat_rates WHERE is_default = 1 ORDER BY id LIMIT 1")->fetchColumn()
             ?: (int) $pdo->query("SELECT id FROM vat_rates ORDER BY id LIMIT 1")->fetchColumn();
         if ($vatRateId === 0) {
             throw new \RuntimeException('Tabulka vat_rates je prázdná.');

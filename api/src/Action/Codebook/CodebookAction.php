@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MyInvoice\Action\Codebook;
 
 use MyInvoice\Http\Json;
+use MyInvoice\Infrastructure\Config\Config;
 use MyInvoice\Infrastructure\Database\Connection;
 use MyInvoice\Middleware\SupplierScopeMiddleware;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -16,7 +17,10 @@ use Psr\Http\Message\ServerRequestInterface as Request;
  */
 final class CodebookAction
 {
-    public function __construct(private readonly Connection $db) {}
+    public function __construct(
+        private readonly Connection $db,
+        private readonly Config $config,
+    ) {}
 
     public function countries(Request $request, Response $response): Response
     {
@@ -126,7 +130,10 @@ final class CodebookAction
     public function vatRates(Request $request, Response $response): Response
     {
         $q = $request->getQueryParams();
-        $country = strtoupper((string) ($q['country'] ?? 'CZ'));
+        // Default country follows the instance profile (CZ default, SK on a Slovak
+        // instance) so the invoice VAT picker shows the right rates without the
+        // frontend having to know the profile. ?country= override still wins.
+        $country = strtoupper((string) ($q['country'] ?? $this->config->get('country.profile', 'CZ')));
         $activeOn = (string) ($q['active_on'] ?? date('Y-m-d'));
 
         $stmt = $this->db->pdo()->prepare(

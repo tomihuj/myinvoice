@@ -10,7 +10,7 @@ import GlobalSearch from './GlobalSearch.vue'
 import ThemeToggle from './ThemeToggle.vue'
 
 const { t, locale } = useI18n()
-function setLocale(l: 'cs' | 'en') {
+function setLocale(l: 'cs' | 'en' | 'sk') {
   locale.value = l
   localStorage.setItem('locale', l)
 }
@@ -300,6 +300,17 @@ onMounted(async () => {
                 <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/>
               </svg>
             </button>
+            <button
+              @click="setLocale('sk')" title="Slovenčina" aria-label="Slovenčina"
+              class="cursor-pointer h-8 px-2 inline-flex items-center border-l border-neutral-200"
+              :class="locale === 'sk' ? 'bg-primary-50' : 'hover:bg-neutral-50 grayscale opacity-60 hover:grayscale-0 hover:opacity-100'"
+            >
+              <svg width="22" height="15" viewBox="0 0 6 4" xmlns="http://www.w3.org/2000/svg">
+                <rect width="6" height="4" fill="#ee1c25"/>
+                <rect width="6" height="2.667" fill="#0b4ea2"/>
+                <rect width="6" height="1.333" fill="#ffffff"/>
+              </svg>
+            </button>
           </div>
 
           <!-- Přepínač motivu (System / Light / Dark) — na mobilu je v drawer patičce -->
@@ -495,6 +506,17 @@ onMounted(async () => {
                   <path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#uk-flag-mob)" stroke="#C8102E" stroke-width="4"/>
                   <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>
                   <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/>
+                </svg>
+              </button>
+              <button
+                @click="setLocale('sk')" title="Slovenčina"
+                class="cursor-pointer h-9 px-3 inline-flex items-center border-l border-neutral-200"
+                :class="locale === 'sk' ? 'bg-primary-50' : 'hover:bg-neutral-50 grayscale opacity-60'"
+              >
+                <svg width="22" height="15" viewBox="0 0 6 4" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="6" height="4" fill="#ee1c25"/>
+                  <rect width="6" height="2.667" fill="#0b4ea2"/>
+                  <rect width="6" height="1.333" fill="#ffffff"/>
                 </svg>
               </button>
             </div>

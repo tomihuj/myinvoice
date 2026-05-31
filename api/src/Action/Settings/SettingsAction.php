@@ -96,14 +96,20 @@ final class SettingsAction
 
         $pdo = $this->db->pdo();
 
-        // Country (default CZ)
-        $countryIso = strtoupper((string) ($b['country_iso2'] ?? 'CZ'));
+        // Country defaults to the instance profile (CZ default, SK on a Slovak instance).
+        $homeCountry = strtoupper((string) $this->config->get('country.profile', 'CZ'));
+        $countryIso = strtoupper((string) ($b['country_iso2'] ?? $homeCountry));
         $stmtCountry = $pdo->prepare('SELECT id FROM countries WHERE iso2 = ?');
         $stmtCountry->execute([$countryIso]);
         $countryId = (int) $stmtCountry->fetchColumn();
         if ($countryId === 0) $countryId = (int) $pdo->query("SELECT id FROM countries WHERE iso2 = 'CZ'")->fetchColumn();
 
-        $defaultVatId = (int) $pdo->query("SELECT id FROM vat_rates WHERE is_default = 1 ORDER BY id LIMIT 1")->fetchColumn()
+        // Default VAT rate scoped to the home country (e.g. SK-23 on SK), since both
+        // CZ and SK rates carry is_default=1 — an unscoped pick would grab CZ by id order.
+        $stmtVat = $pdo->prepare("SELECT id FROM vat_rates WHERE is_default = 1 AND country = ? ORDER BY id LIMIT 1");
+        $stmtVat->execute([$homeCountry]);
+        $defaultVatId = (int) $stmtVat->fetchColumn()
+            ?: (int) $pdo->query("SELECT id FROM vat_rates WHERE is_default = 1 ORDER BY id LIMIT 1")->fetchColumn()
             ?: (int) $pdo->query("SELECT id FROM vat_rates ORDER BY id LIMIT 1")->fetchColumn();
 
         $pdo->beginTransaction();
