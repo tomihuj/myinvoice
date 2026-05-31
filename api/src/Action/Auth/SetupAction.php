@@ -165,7 +165,12 @@ final class SetupAction
             $countryId = (int) $pdo->query("SELECT id FROM countries WHERE iso2 = 'CZ'")->fetchColumn();
         }
 
-        $defaultCurrencyCode = strtoupper((string) ($supplier['default_currency'] ?? 'CZK'));
+        // Default měna supplier: explicitní volba z formuláře → jinak tuzemská měna
+        // dle profilu (country.local_currency: CZ 'CZK', SK 'EUR'). Seed currencies níže
+        // obsahují CZK i EUR, takže výběr dle kódu sedne na obě.
+        $defaultCurrencyCode = strtoupper((string) (
+            $supplier['default_currency'] ?? $this->config->get('country.local_currency', 'CZK')
+        ));
         $vatRateId = (int) $pdo->query("SELECT id FROM vat_rates WHERE is_default = 1 ORDER BY id LIMIT 1")->fetchColumn()
             ?: (int) $pdo->query("SELECT id FROM vat_rates ORDER BY id LIMIT 1")->fetchColumn();
         if ($vatRateId === 0) {

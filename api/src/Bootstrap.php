@@ -95,6 +95,19 @@ final class Bootstrap
             // Za reverse proxy → audit log a brute-force lockout vidí IP proxy místo
             // reálného klienta. Explicitní injekce Configu to opravuje.
             IpMatcher::class       => fn (ContainerInterface $c) => new IpMatcher($c->get(Config::class)),
+
+            // SK layer: RpoClient needs a scalar base URL PHP-DI can't autowire;
+            // RegistryGateway picks ARES vs RPO from country.profile.
+            \MyInvoice\Service\Registry\RpoClient::class => fn (ContainerInterface $c) =>
+                new \MyInvoice\Service\Registry\RpoClient(
+                    (string) $c->get(Config::class)->get('sk.rpo_api', 'https://api.statistics.sk/rpo/v1')
+                ),
+            \MyInvoice\Service\Registry\RegistryGateway::class => fn (ContainerInterface $c) =>
+                new \MyInvoice\Service\Registry\RegistryGateway(
+                    (string) $c->get(Config::class)->get('country.profile', 'CZ'),
+                    $c->get(\MyInvoice\Service\Ares\AresClient::class),
+                    $c->get(\MyInvoice\Service\Registry\RpoClient::class),
+                ),
         ]);
 
         $container = $builder->build();

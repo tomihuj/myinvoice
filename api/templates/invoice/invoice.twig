@@ -103,7 +103,7 @@
   {% if not supplier.is_vat_payer %}
   <tr>
     <td class="meta-label">{{ t('DPH', 'VAT') }}</td>
-    <td class="meta-value" colspan="3">{{ t('Není plátce DPH', 'Not a VAT payer') }}</td>
+    <td class="meta-value" colspan="3">{{ t('Není plátce DPH', 'Not a VAT payer', 'Neplatiteľ DPH') }}</td>
   </tr>
   {% elseif invoice.tax_date and invoice.invoice_type != 'proforma' %}
   <tr>
@@ -220,7 +220,8 @@
 {% if invoice.reverse_charge %}
 <div class="note rc-note">
   {{ t('Daň odvede zákazník (přenesená daňová povinnost dle § 92a zákona o DPH).',
-       'Reverse charge — VAT to be accounted for by the customer.') }}
+       'Reverse charge — VAT to be accounted for by the customer.',
+       'Prenesenie daňovej povinnosti podľa § 69 zákona č. 222/2004 Z. z. o DPH.') }}
 </div>
 {% endif %}
 
@@ -414,7 +415,8 @@
 {% if invoice.invoice_type == 'proforma' %}
 <div class="note proforma-note">
   {{ t('Nejedná se o daňový doklad, ten bude vystaven po připsání platby.',
-       'This is not a tax document. The tax document will be issued after payment is received.') }}
+       'This is not a tax document. The tax document will be issued after payment is received.',
+       'Nejde o daňový doklad; ten bude vystavený po pripísaní platby.') }}
 </div>
 {% endif %}
 

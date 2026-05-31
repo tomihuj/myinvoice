@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MyInvoice\Tests\Unit\Service\Bank;
 
+use MyInvoice\Infrastructure\Config\Config;
 use MyInvoice\Infrastructure\Database\Connection;
 use MyInvoice\Service\Bank\StatementMatcher;
 use MyInvoice\Service\Invoice\FinalFromProformaCreator;
@@ -112,5 +113,43 @@ final class StatementMatcherTest extends TestCase
         self::assertNotNull($m);
         self::assertSame(0.5, $m['expected']);
         self::assertSame(0.05, $m['exact']);
+    }
+
+    // ── SK profile: tuzemská měna je EUR (country.local_currency) ────────────
+
+    private function matcherWithLocalCurrency(string $localCurrency): StatementMatcher
+    {
+        return new StatementMatcher(
+            $this->createStub(Connection::class),
+            $this->createStub(FinalFromProformaCreator::class),
+            Config::fromArray(['country' => ['local_currency' => $localCurrency]]),
+        );
+    }
+
+    /** @return array{expected: float, exact: float, partial: float}|null */
+    private function expectedMatchOn(StatementMatcher $matcher, float $amount, string $invCcy, float $rate, ?string $txCcy): ?array
+    {
+        $ref = new \ReflectionMethod($matcher, 'expectedMatch');
+        /** @var array{expected: float, exact: float, partial: float}|null $r */
+        $r = $ref->invoke($matcher, $amount, $invCcy, $rate, $txCcy);
+        return $r;
+    }
+
+    public function testSkProfileTreatsEurAsLocalCurrency(): void
+    {
+        // SK profil (local_currency='EUR'): EUR platba cizoměnové (CZK) faktury se přepočte
+        // kurzem faktury — na CZ profilu by EUR×CZK vrátilo null.
+        $matcher = $this->matcherWithLocalCurrency('EUR');
+        $m = $this->expectedMatchOn($matcher, 100.0, 'CZK', 0.04, 'EUR'); // 100 CZK × 0.04 = 4 EUR
+        self::assertNotNull($m, 'EUR je tuzemská na SK profilu → CZK faktura se přepočte, ne null');
+        self::assertEqualsWithDelta(4.0, $m['expected'], 0.001);
+        self::assertSame($m['exact'], $m['partial']); // cross-currency = jeden tier
+    }
+
+    public function testSkProfileRejectsForeignToForeign(): void
+    {
+        // CZK je na SK profilu cizí měna → CZK platba USD faktury = null (bez kurzu nepárovat).
+        $matcher = $this->matcherWithLocalCurrency('EUR');
+        self::assertNull($this->expectedMatchOn($matcher, 100.0, 'USD', 1.0, 'CZK'));
     }
 }

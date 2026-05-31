@@ -8,6 +8,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use MyInvoice\Infrastructure\Config\Config;
 use MyInvoice\Infrastructure\Database\Connection;
+use MyInvoice\Service\Registry\RegistryLookup;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -18,7 +19,7 @@ use Psr\Log\LoggerInterface;
  *
  * Vrací normalizovaný array nebo null pokud subjekt nenalezen / chyba sítě.
  */
-final class AresClient
+final class AresClient implements RegistryLookup
 {
     public function __construct(
         private readonly Config $config,

@@ -86,11 +86,13 @@ final class InvoiceDefaults
                 ?? 0
             );
             if ($data['currency_id'] <= 0 && $supplierId > 0) {
-                // Fallback: vyber default CZK clientova supplier
+                // Fallback: default tuzemská měna supplier — CZ profil 'CZK', SK profil 'EUR'
+                // (country.local_currency). Drží konzistenci se StatementMatcher::$localCurrency.
+                $localCurrency = strtoupper((string) $this->config->get('country.local_currency', 'CZK'));
                 $stmt = $pdo->prepare(
-                    "SELECT id FROM currencies WHERE supplier_id = ? AND code = 'CZK' ORDER BY is_default DESC LIMIT 1"
+                    'SELECT id FROM currencies WHERE supplier_id = ? AND code = ? ORDER BY is_default DESC LIMIT 1'
                 );
-                $stmt->execute([(int) $supplierId]);
+                $stmt->execute([(int) $supplierId, $localCurrency]);
                 $data['currency_id'] = (int) $stmt->fetchColumn();
             }
         }

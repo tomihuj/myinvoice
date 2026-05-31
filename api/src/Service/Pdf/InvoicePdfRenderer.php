@@ -235,6 +235,11 @@ final class InvoicePdfRenderer
         }
 
         $locale = $invoice['language'] ?? 'cs';
+        // Stage 1: a Slovak instance forces 'sk' wording on the PDF regardless of the
+        // language ENUM (widened only in Stage 3). Profile set in cfg.local.php.
+        if ($this->config->get('country.profile') === 'SK') {
+            $locale = 'sk';
+        }
         $cssPath = Bootstrap::rootDir() . '/styles/invoice.css';
         $css = $includeCss && is_file($cssPath) ? (string) file_get_contents($cssPath) : '';
         if ($includeCss && $css !== '') {
@@ -244,7 +249,12 @@ final class InvoicePdfRenderer
         $twig = $this->twig();
 
         // Translation helper
-        $twig->addFunction(new \Twig\TwigFunction('t', static function (string $cs, string $en) use ($locale) {
+        // 3-arg form: t('cs','en','sk'). Existing 2-arg calls still work; for the sk
+        // locale they fall back to Czech until a Slovak string is supplied.
+        $twig->addFunction(new \Twig\TwigFunction('t', static function (string $cs, string $en, ?string $sk = null) use ($locale) {
+            if ($locale === 'sk') {
+                return $sk ?? $cs;
+            }
             return $locale === 'en' ? $en : $cs;
         }));
 
@@ -260,7 +270,7 @@ final class InvoicePdfRenderer
             'payment_method'    => $paymentMethod,
             'locale'            => $locale,
             'doc_type_label'    => $this->docTypeLabel($invoice, $locale, $supplierData),
-            'doc_title'         => $this->docTitle($invoice),
+            'doc_title'         => $this->docTitle($invoice, $locale),
             'parent_varsymbol'  => $this->parentVarsymbol($invoice),
             'work_report'       => $this->workReports->findByInvoice((int) $invoice['id']),
             'date_format'       => $locale === 'en' ? 'M j, Y' : 'j. n. Y',
@@ -424,19 +434,29 @@ final class InvoicePdfRenderer
                 'credit_note'  => $isVatPayer ? 'Credit note — Tax adjustment' : 'Credit note',
                 'cancellation' => 'Cancellation (internal)',
             ],
+            'sk' => [
+                'invoice'      => $isVatPayer ? 'Faktúra – daňový doklad' : 'Faktúra',
+                'proforma'     => 'Zálohová faktúra',
+                'credit_note'  => $isVatPayer ? 'Opravný daňový doklad' : 'Opravná faktúra',
+                'cancellation' => 'Storno (interné)',
+            ],
         ];
         return $labels[$locale][$invoice['invoice_type']] ?? $labels['cs'][$invoice['invoice_type']] ?? '';
     }
 
-    private function docTitle(array $invoice): string
+    private function docTitle(array $invoice, string $locale = 'cs'): string
     {
         $vs = $invoice['varsymbol'] ?? ('DRAFT-' . $invoice['id']);
-        $t = match ($invoice['invoice_type']) {
-            'proforma'     => 'Zálohová faktura',
-            'credit_note'  => 'Dobropis',
-            'cancellation' => 'Storno',
-            default        => 'Faktura',
-        };
+        if ($locale === 'sk') {
+            $t = \MyInvoice\Service\Sk\SkInvoiceLabels::docTitle($invoice['invoice_type']);
+        } else {
+            $t = match ($invoice['invoice_type']) {
+                'proforma'     => 'Zálohová faktura',
+                'credit_note'  => 'Dobropis',
+                'cancellation' => 'Storno',
+                default        => 'Faktura',
+            };
+        }
         return "$t $vs";
     }
 

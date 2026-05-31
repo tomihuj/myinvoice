@@ -91,6 +91,18 @@ final class Config
         return new self($merged, $dataDir);
     }
 
+    /**
+     * Test seam: postaví Config přímo z pole, bez čtení cfg.php z disku ani ENV
+     * overrides. Určeno pro unit testy (např. SK country profil / local_currency).
+     * Produkční kód vždy jde přes load().
+     *
+     * @param array<string,mixed> $data
+     */
+    public static function fromArray(array $data, ?string $dataDir = null): self
+    {
+        return new self($data, $dataDir);
+    }
+
     public function get(string $path, mixed $default = null): mixed
     {
         $segments = explode('.', $path);

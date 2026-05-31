@@ -164,6 +164,19 @@ return [
         'cache_ttl' => 10800,                        // 3h cache odpovědí VIES (per DIČ) — VIES občas vrací false-negative při výpadku, krátká cache omezí dopad
         'timeout'   => 8,
     ],
+    // ── Národní profil ───────────────────────────────────────────────────────
+    // Přepíná chování instance mezi českým (default) a slovenským režimem.
+    // Aktivuje slovenskou vrstvu: registr RPO místo ARES, EUR jako tuzemská měna,
+    // slovenské právní texty a názvy dokladů na PDF (§ 69 zákona 222/2004 Z. z.).
+    'country' => [
+        'profile'        => 'CZ',                    // 'CZ' (default) | 'SK'
+        'local_currency' => 'CZK',                   // účetní/tuzemská měna pro párování plateb a fallback měny faktury. SK profil: 'EUR'
+    ],
+    // Slovenský registr právnických osob (RPO, Štatistický úrad SR) — použije se,
+    // jen když country.profile = 'SK'. Na CZ profilu se ignoruje (lookuje ARES).
+    'sk' => [
+        'rpo_api' => 'https://api.statistics.sk/rpo/v1',  // base URL RPO REST API
+    ],
     'logging' => [
         'level'    => 'info',                        // debug | info | notice | warning | error
         'path'     => __DIR__ . '/log/app.log',

@@ -6,7 +6,7 @@ namespace MyInvoice\Action\Auth;
 
 use MyInvoice\Http\Json;
 use MyInvoice\Infrastructure\Database\Connection;
-use MyInvoice\Service\Ares\AresClient;
+use MyInvoice\Service\Registry\RegistryGateway;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -23,7 +23,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 final class SetupAresLookupAction
 {
     public function __construct(
-        private readonly AresClient $ares,
+        private readonly RegistryGateway $registry,
         private readonly Connection $db,
     ) {}
 
@@ -43,9 +43,9 @@ final class SetupAresLookupAction
             return Json::error($response, 'invalid_ic', 'IČO musí mít 8 číslic.', 400);
         }
 
-        $result = $this->ares->lookup($ic);
+        $result = $this->registry->lookup($ic);
         if ($result === null) {
-            return Json::error($response, 'ares_unavailable', 'ARES je dočasně nedostupný.', 503);
+            return Json::error($response, 'ares_unavailable', 'Registr je dočasně nedostupný.', 503);
         }
         return Json::ok($response, $result);
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MyInvoice\Service\Bank;
 
+use MyInvoice\Infrastructure\Config\Config;
 use MyInvoice\Infrastructure\Database\Connection;
 use MyInvoice\Service\Invoice\FinalFromProformaCreator;
 use PDO;
@@ -37,17 +38,24 @@ final class StatementMatcher
     private const EXACT_MATCH_TOLERANCE = 0.05;
     /** Tolerance pro auto_partial — vyšší rozdíly už se ručně rozeznají (splátka / přeplatek). */
     private const PARTIAL_MATCH_TOLERANCE = 1.0;
-    /** Účetní (tuzemská) měna — base částky, na kterou přepočítáváme cizoměnové faktury. */
-    private const LOCAL_CURRENCY = 'CZK';
     /** Relativní tolerance pro cross-currency shodu (tuzemská platba cizoměnové faktury).
      *  Banka si na převodu bere spread klidně ~2 % a kurz se za pár dní pohne — 4 %
      *  dává rezervu, aby přepočet přes kurz faktury reálně sednul. */
     private const FX_MATCH_TOLERANCE_PCT = 0.04;
 
+    /** Účetní (tuzemská) měna — base částky, na kterou přepočítáváme cizoměnové faktury.
+     *  Konfigurovatelná dle profilu (country.local_currency): CZ 'CZK', SK 'EUR'. */
+    private readonly string $localCurrency;
+
     public function __construct(
         private readonly Connection $db,
         private readonly FinalFromProformaCreator $finalCreator,
-    ) {}
+        ?Config $config = null,
+    ) {
+        // Optional trailing param → DI autowires the real Config (registered entry),
+        // while existing 2-arg call sites (cron, unit test) keep the 'CZK' default.
+        $this->localCurrency = strtoupper((string) ($config?->get('country.local_currency', 'CZK') ?? 'CZK'));
+    }
 
     /**
      * Očekávaná částka faktury vyjádřená v měně transakce + tolerance (exact, partial).
@@ -64,7 +72,7 @@ final class StatementMatcher
         }
         // Tuzemská platba cizoměnové faktury → přepočet kurzem faktury (CZK = částka × kurz).
         // Relativní tolerance kvůli kurzovému driftu; partial tier zde nemá smysl (= exact).
-        if (strtoupper($txCurrency) === self::LOCAL_CURRENCY) {
+        if (strtoupper($txCurrency) === $this->localCurrency) {
             $r = $rate > 0 ? $rate : 1.0;
             $czk = $invoiceAmount * $r;
             $tol = max(self::EXACT_MATCH_TOLERANCE, $czk * self::FX_MATCH_TOLERANCE_PCT);
@@ -261,7 +269,7 @@ final class StatementMatcher
             return ['status' => 'unmatched', 'reason' => 'no_purchase_with_vs', 'tx_currency' => $txCurrency];
         }
 
-        $m = $this->expectedMatch((float) $pi['amount_to_pay'], (string) ($pi['currency'] ?? self::LOCAL_CURRENCY), (float) ($pi['exchange_rate'] ?: 0), $txCurrency);
+        $m = $this->expectedMatch((float) $pi['amount_to_pay'], (string) ($pi['currency'] ?? $this->localCurrency), (float) ($pi['exchange_rate'] ?: 0), $txCurrency);
         if ($m === null) {
             return ['status' => 'unmatched', 'reason' => 'currency_mismatch_purchase',
                     'tx_currency' => $txCurrency, 'invoice_currency' => $pi['currency']];
@@ -357,7 +365,7 @@ final class StatementMatcher
 
         $similar = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
-            $m = $this->expectedMatch((float) $r['amount_to_pay'], (string) ($r['currency'] ?? self::LOCAL_CURRENCY), (float) ($r['exchange_rate'] ?: 0), $txCurrency);
+            $m = $this->expectedMatch((float) $r['amount_to_pay'], (string) ($r['currency'] ?? $this->localCurrency), (float) ($r['exchange_rate'] ?: 0), $txCurrency);
             if ($m === null || abs($absAmount - $m['expected']) > $m['exact']) {
                 continue; // částka (po přepočtu) musí sedět
             }

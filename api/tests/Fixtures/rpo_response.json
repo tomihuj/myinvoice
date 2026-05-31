@@ -1,0 +1,21 @@
+{
+  "results": [
+    {
+      "identifier": "31333532",
+      "fullNames": [{ "value": "ESET, spol. s r.o." }],
+      "taxNumbers": ["2020317068"],
+      "vatNumbers": ["SK2020317068"],
+      "addresses": [
+        {
+          "street": "Einsteinova",
+          "buildingNumber": "24",
+          "municipality": { "value": "Bratislava" },
+          "postalCodes": ["851 01"],
+          "country": { "code": "SK" }
+        }
+      ],
+      "legalForms": [{ "value": "Spoločnosť s ručením obmedzeným" }],
+      "establishment": "1992-08-26"
+    }
+  ]
+}
