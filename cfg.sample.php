@@ -172,10 +172,12 @@ return [
         'profile'        => 'CZ',                    // 'CZ' (default) | 'SK'
         'local_currency' => 'CZK',                   // účetní/tuzemská měna pro párování plateb a fallback měny faktury. SK profil: 'EUR'
     ],
-    // Slovenský registr právnických osob (RPO, Štatistický úrad SR) — použije se,
-    // jen když country.profile = 'SK'. Na CZ profilu se ignoruje (lookuje ARES).
+    // Slovenský registr firem — použije se jen když country.profile = 'SK'
+    // (na CZ profilu se ignoruje, lookuje ARES). Lookup IČO jde přes ORSF
+    // (api.orsf.sk) — free, bez API klíče, agreguje RPO/ORSR/RUZ a je rychlý;
+    // oficiální statistics.sk RPO API na synchronní form lookup timeoutuje.
     'sk' => [
-        'rpo_api' => 'https://api.statistics.sk/rpo/v1',  // base URL RPO REST API
+        'registry_api' => 'https://api.orsf.sk/v1',  // base URL ORSF REST API
     ],
     'logging' => [
         'level'    => 'info',                        // debug | info | notice | warning | error

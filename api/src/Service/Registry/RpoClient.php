@@ -5,11 +5,17 @@ declare(strict_types=1);
 namespace MyInvoice\Service\Registry;
 
 /**
- * Slovak business-registry (RPO — Register právnických osôb, Štatistický úrad SR) lookup.
- * Returns the SAME normalized array shape as AresClient::lookup() so existing
- * "load from registry" endpoints/frontend work unchanged.
+ * Slovak company-registry lookup via ORSF (https://api.orsf.sk) — a free,
+ * key-less REST aggregator over the official RPO / ORSR / RUZ registers.
  *
- * The HTTP fetch is injected (callable(string $url): ?string) so the JSON->fields
+ * We use ORSF rather than the official statistics.sk RPO API because the latter
+ * regularly times out (>50 s, 0 bytes) on synchronous IČO lookups from a web form,
+ * which made the "load company by IČO" button dead on the SK profile.
+ *
+ * Returns the SAME normalized array shape as AresClient::lookup() so the existing
+ * "load from registry" endpoints/frontend (Setup, Settings, Codebooks) work unchanged.
+ *
+ * The HTTP fetch is injected (callable(string $url): ?string) so the JSON→fields
  * mapping is unit-testable without network access.
  */
 final class RpoClient implements RegistryLookup
@@ -19,7 +25,7 @@ final class RpoClient implements RegistryLookup
 
     /** @param (callable(string):?string)|null $fetch */
     public function __construct(
-        private readonly string $apiBase,
+        private readonly string $apiBase,   // e.g. https://api.orsf.sk/v1
         ?callable $fetch = null,
     ) {
         $this->fetch = $fetch ?? self::defaultFetch();
@@ -35,23 +41,19 @@ final class RpoClient implements RegistryLookup
             return null;
         }
 
-        $url = rtrim($this->apiBase, '/') . '/entities?identifier=' . $ico;
+        $url = rtrim($this->apiBase, '/') . '/companies/' . $ico;
         $raw = ($this->fetch)($url);
         if ($raw === null || $raw === '') {
             return null;
         }
 
-        $data = json_decode($raw, true);
-        if (!is_array($data)) {
+        $e = json_decode($raw, true);
+        // ORSF returns the company object directly; a 404/error payload has no `ico`.
+        if (!is_array($e) || empty($e['ico'])) {
             return null;
         }
 
-        $entity = $data['results'][0] ?? null;
-        if (!is_array($entity)) {
-            return null;
-        }
-
-        return $this->normalize($ico, $entity);
+        return $this->normalize($ico, $e);
     }
 
     /**
@@ -60,22 +62,25 @@ final class RpoClient implements RegistryLookup
      */
     private function normalize(string $ico, array $e): array
     {
-        $addr   = $e['addresses'][0] ?? [];
-        $street = trim(((string) ($addr['street'] ?? '')) . ' ' . ((string) ($addr['buildingNumber'] ?? '')));
-        $vatNos = $e['vatNumbers'] ?? [];
+        $addr = is_array($e['address'] ?? null) ? $e['address'] : [];
+        $register = trim(((string) ($e['register'] ?? '')) . ' ' . ((string) ($e['registerNumber'] ?? '')));
+        // Živnostenský register → fyzická osoba (FO); inak právnická osoba (PO).
+        $isTrade = stripos((string) ($e['register'] ?? ''), 'ivnosten') !== false;
 
         return [
-            'company_name' => (string) ($e['fullNames'][0]['value'] ?? ''),
-            'ic'           => $ico,
-            'dic'          => (string) ($e['taxNumbers'][0] ?? ''),
-            'street'       => $street,
-            'city'         => (string) ($addr['municipality']['value'] ?? ''),
-            'zip'          => (string) ($addr['postalCodes'][0] ?? ''),
-            'country_iso2' => (string) ($addr['country']['code'] ?? 'SK'),
-            'is_vat_payer' => !empty($vatNos),
-            'date_active'  => (string) ($e['establishment'] ?? ''),
-            'legal_form'   => (string) ($e['legalForms'][0]['value'] ?? ''),
-            'vat_id'       => (string) ($vatNos[0] ?? ''),
+            'company_name'        => (string) ($e['name'] ?? ''),
+            'ic'                  => (string) ($e['ico'] ?? $ico),
+            'dic'                 => (string) ($e['dic'] ?? ''),
+            'street'              => (string) ($e['street'] ?? ($addr['street'] ?? '')),
+            'city'                => (string) ($e['city'] ?? ($addr['city'] ?? '')),
+            'zip'                 => (string) ($e['psc'] ?? ($e['postalCode'] ?? ($addr['postalCode'] ?? ''))),
+            'country_iso2'        => strtoupper((string) ($e['countryCode'] ?? 'SK')),
+            'is_vat_payer'        => !empty($e['icdph']),
+            'vat_id'              => (string) ($e['icdph'] ?? ''),
+            'legal_form'          => (string) ($e['legalForm'] ?? ''),
+            'commercial_register' => $register,
+            'taxpayer_type'       => $isTrade ? 'fo' : 'po',
+            'date_active'         => (string) ($e['establishedOn'] ?? ''),
         ];
     }
 
@@ -83,7 +88,11 @@ final class RpoClient implements RegistryLookup
     private static function defaultFetch(): callable
     {
         return static function (string $url): ?string {
-            $ctx = stream_context_create(['http' => ['timeout' => 8, 'ignore_errors' => true]]);
+            $ctx = stream_context_create(['http' => [
+                'timeout'       => 10,
+                'ignore_errors' => true,
+                'header'        => "Accept: application/json\r\nUser-Agent: MyInvoice-SK/1.0\r\n",
+            ]]);
             $body = @file_get_contents($url, false, $ctx);
             return $body === false ? null : $body;
         };

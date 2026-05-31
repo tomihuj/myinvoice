@@ -1,21 +1,23 @@
 {
-  "results": [
-    {
-      "identifier": "31333532",
-      "fullNames": [{ "value": "ESET, spol. s r.o." }],
-      "taxNumbers": ["2020317068"],
-      "vatNumbers": ["SK2020317068"],
-      "addresses": [
-        {
-          "street": "Einsteinova",
-          "buildingNumber": "24",
-          "municipality": { "value": "Bratislava" },
-          "postalCodes": ["851 01"],
-          "country": { "code": "SK" }
-        }
-      ],
-      "legalForms": [{ "value": "Spoločnosť s ručením obmedzeným" }],
-      "establishment": "1992-08-26"
-    }
-  ]
+  "countryCode": "SK",
+  "ico": "31333532",
+  "dic": "2020317068",
+  "icdph": "SK2020317068",
+  "name": "ESET, spol. s r.o.",
+  "legalForm": "spoločnosť s ručením obmedzeným",
+  "status": "aktívna",
+  "street": "Einsteinova 24",
+  "city": "Bratislava - mestská časť Petržalka",
+  "psc": "85101",
+  "establishedOn": "1992-09-17T00:00:00.000Z",
+  "register": "Obchodný register",
+  "registerNumber": "Sro/3586/B",
+  "registerOffice": "Mestský súd Bratislava III",
+  "address": {
+    "street": "Einsteinova 24",
+    "city": "Bratislava - mestská časť Petržalka",
+    "psc": "85101",
+    "postalCode": "85101",
+    "country": "SK"
+  }
 }

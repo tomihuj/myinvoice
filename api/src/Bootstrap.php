@@ -97,10 +97,12 @@ final class Bootstrap
             IpMatcher::class       => fn (ContainerInterface $c) => new IpMatcher($c->get(Config::class)),
 
             // SK layer: RpoClient needs a scalar base URL PHP-DI can't autowire;
-            // RegistryGateway picks ARES vs RPO from country.profile.
+            // RegistryGateway picks ARES vs RPO/ORSF from country.profile.
+            // SK lookups go through ORSF (api.orsf.sk) — free, key-less, reliable;
+            // the official statistics.sk RPO API times out on synchronous form lookups.
             \MyInvoice\Service\Registry\RpoClient::class => fn (ContainerInterface $c) =>
                 new \MyInvoice\Service\Registry\RpoClient(
-                    (string) $c->get(Config::class)->get('sk.rpo_api', 'https://api.statistics.sk/rpo/v1')
+                    (string) $c->get(Config::class)->get('sk.registry_api', 'https://api.orsf.sk/v1')
                 ),
             \MyInvoice\Service\Registry\RegistryGateway::class => fn (ContainerInterface $c) =>
                 new \MyInvoice\Service\Registry\RegistryGateway(
