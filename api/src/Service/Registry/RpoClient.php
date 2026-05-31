@@ -44,16 +44,18 @@ final class RpoClient implements RegistryLookup
         $url = rtrim($this->apiBase, '/') . '/companies/' . $ico;
         $raw = ($this->fetch)($url);
         if ($raw === null || $raw === '') {
-            return null;
+            return null;   // network/unavailable → AresLookupAction returns 503
         }
 
         $e = json_decode($raw, true);
         // ORSF returns the company object directly; a 404/error payload has no `ico`.
         if (!is_array($e) || empty($e['ico'])) {
-            return null;
+            return ['found' => false];
         }
 
-        return $this->normalize($ico, $e);
+        // Mirror AresClient::lookup() envelope so the same actions/frontend work:
+        // {found: true, data: {...normalized fields...}}.
+        return ['found' => true, 'data' => $this->normalize($ico, $e)];
     }
 
     /**
